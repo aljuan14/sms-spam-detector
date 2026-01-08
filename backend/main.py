@@ -1,16 +1,15 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware  # <--- WAJIB IMPORT INI
 from pydantic import BaseModel
 import joblib
 import re
 import spacy
 import numpy as np
 import pandas as pd
-# Penting untuk kompatibilitas
 from sklearn.base import BaseEstimator, TransformerMixin
 
-# --- 1. SETUP & DEFINISI FUNGSI (WAJIB SAMA DENGAN NOTEBOOK) ---
+# --- 1. SETUP & DEFINISI FUNGSI ---
 
-# Load Spacy (Fallback jika gagal download)
 try:
     nlp = spacy.blank("id")
     STOP_WORDS = nlp.Defaults.stop_words
@@ -22,11 +21,8 @@ STOP_WORDS.update(['yg', 'jg', 'teh', 'mah', 'da', 'atuh', 'jd', 'km', 'ak', 'lg
                    'tahu', 'gt', 'udah', 'utk', 'rb', 'rp', 'dgn', 'ayo', 'isi', 'biar', 'yah', 'dr', 'bawa', 'gitu', 'eh',
                    'pas', 'td', 'sm', 'pengen', 'pgn', 'dpt', 'sd', 'byr', 'min', 'dscn', 'sy', 'no'])
 
-# --- FUNGSI-FUNGSI YANG DICARI OLEH MODEL ---
-
 
 def bersih_bersih(sentence):
-    # (Kode pembersih sama seperti sebelumnya)
     sentence = str(sentence).lower()
     sentence = re.sub(r'(\[.*?\]|\(.*?\))', '', sentence)
     sentence = re.sub(r'\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.', '', sentence)
@@ -43,26 +39,24 @@ def bersih_bersih(sentence):
     sentence = re.sub(r"\*\d{3,}#", "", sentence)
     sentence = re.sub(r"https?://\S+|www\.\S+", "", sentence)
     sentence = re.sub(r'\b\d+\b', '', sentence)
+
+    # Hapus Stopwords
+    tokens = sentence.split()
+    tokens = [word for word in tokens if word not in STOP_WORDS]
+    sentence = ' '.join(tokens)
+
     sentence = sentence.strip()
     return sentence
 
-# [BARU] Fungsi ini yang tadi error karena hilang
-
 
 def get_text_feature(data):
-    # Fungsi ini bertugas mengambil kolom teks dari DataFrame
     if isinstance(data, pd.DataFrame):
-        # Mencoba mengambil kolom 'Teks Bersih' (nama kolom umum di notebook)
-        # Jika tidak ada, ambil kolom pertama
         return data['Teks Bersih'] if 'Teks Bersih' in data.columns else data.iloc[:, 0]
     return data
 
 
 def get_numeric_feature(data):
-    # Fungsi ini menghitung panjang karakter (asumsi fitur numerik)
-    # Kita buat fleksibel menerima DataFrame atau Series
     if isinstance(data, pd.DataFrame):
-        # Jika input DataFrame, ambil kolom teksnya dulu
         text_data = data['Teks Bersih'] if 'Teks Bersih' in data.columns else data.iloc[:, 0]
         return text_data.apply(len).values.reshape(-1, 1)
     elif isinstance(data, pd.Series):
@@ -71,17 +65,23 @@ def get_numeric_feature(data):
         return np.array([len(x) for x in data]).reshape(-1, 1)
 
 
-# --- 2. LOAD MODEL ---
+# --- 2. LOAD MODEL & APP ---
 app = FastAPI(title="SMS Spam Detector API")
 
+# --- KONFIGURASI CORS (PENTING UNTUK MENGHUBUNGKAN FRONTEND) ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Mengizinkan semua domain (termasuk localhost:5173)
+    allow_credentials=True,
+    allow_methods=["*"],  # Mengizinkan semua method (GET, POST, OPTIONS, dll)
+    allow_headers=["*"],
+)
+
 try:
-    # Model akan mencari 'bersih_bersih', 'get_text_feature', dan 'get_numeric_feature'
     model = joblib.load("sms_spam_detection_model.pkl")
     print("✅ Model berhasil dimuat!")
 except Exception as e:
     print(f"❌ Error memuat model: {e}")
-
-# --- 3. API ENDPOINTS ---
 
 
 class SMSInput(BaseModel):
@@ -96,32 +96,34 @@ def home():
 @app.post("/predict")
 def predict_sms(input_data: SMSInput):
     raw_text = input_data.text
-
-    # Preprocessing Awal
     cleaned_text = bersih_bersih(raw_text)
 
     try:
-        # PENTING: FeatureUnion biasanya mengharapkan DataFrame sebagai input
-        # Kita buat DataFrame pura-pura dengan nama kolom yang mungkin dipakai saat training
         input_df = pd.DataFrame({'Teks Bersih': [cleaned_text]})
-
-        # Prediksi
         prediction = model.predict(input_df)[0]
 
-        # Mapping label (0=Normal, 1=Fraud, 2=Promo)
+        try:
+            proba = model.predict_proba(input_df)
+            confidence = np.max(proba) * 100
+            print(
+                f"DEBUG: Input='{cleaned_text}' | Pred={prediction} | Proba={proba}")
+        except:
+            confidence = 0
+            print(f"DEBUG: Model tidak support predict_proba")
+
         label_map = {0: "Normal", 1: "Penipuan/Fraud", 2: "Promo"}
-        result = label_map.get(prediction, "Unknown")
+        result = label_map.get(int(prediction), "Unknown")
 
         return {
             "text": raw_text,
             "cleaned_text": cleaned_text,
             "prediction": int(prediction),
-            "label": result
+            "label": result,
+            "confidence": f"{confidence:.2f}%"
         }
     except Exception as e:
         print(f"Error saat prediksi: {e}")
-        raise HTTPException(
-            status_code=500, detail="Terjadi kesalahan pada model. Cek terminal server.")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
