@@ -64,11 +64,11 @@ function App() {
     if (!inputText.trim()) return;
     setLoadingSms(true); setSmsResult(null); setErrorSms('');
     try {
-      // [PERUBAHAN PENTING] Menggunakan relative path /api untuk Vercel
-      const response = await axios.post('/api/predict', { text: inputText });
+      // [PERUBAHAN 1] Menggunakan Link Ngrok
+      const response = await axios.post('https://dfa81c80d646.ngrok-free.app/predict', { text: inputText });
       setSmsResult(response.data);
     } catch (err) {
-      console.error(err); setErrorSms('Gagal koneksi ke backend.');
+      console.error(err); setErrorSms('Gagal koneksi ke backend (Ngrok).');
     } finally { setLoadingSms(false); }
   };
 
@@ -87,8 +87,8 @@ function App() {
       const firstHeader = originalHeaders[0];
       const textsToSend = data.map(row => row[firstHeader]);
 
-      // [PERUBAHAN PENTING] Menggunakan relative path /api untuk Vercel
-      const response = await axios.post('/api/predict-batch', { texts: textsToSend });
+      // [PERUBAHAN 2] Menggunakan Link Ngrok
+      const response = await axios.post('https://dfa81c80d646.ngrok-free.app/predict-batch', { texts: textsToSend });
 
       const predictedData = response.data;
       const newHeaders = Object.keys(predictedData[0]);
@@ -98,7 +98,7 @@ function App() {
       setDataStats({ rows: predictedData.length, cols: newHeaders.length });
     } catch (err) {
       console.error("Batch Predict Error:", err);
-      alert("Gagal memproses prediksi batch. Pastikan backend jalan.");
+      alert("Gagal memproses prediksi batch. Pastikan backend Ngrok jalan.");
       setTableData(data); setTableHeaders(originalHeaders); setDataStats({ rows: data.length, cols: originalHeaders.length });
     } finally {
       setIsProcessing(false); setShowDashboard(true);
