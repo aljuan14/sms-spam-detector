@@ -1,106 +1,121 @@
 ```markdown
+<div align="center">
+
 # 🛡️ SMS Guard & Miner
+### **Advanced SMS Spam Detection & Analysis System**
 
-**SMS Guard & Miner** adalah aplikasi web berbasis Machine Learning untuk mendeteksi dan mengklasifikasikan pesan SMS ke dalam kategori **Normal**, **Penipuan (Fraud)**, atau **Promo**.
+![Project Status](https://img.shields.io/badge/Status-Active_Development-success?style=for-the-badge&logo=statuspage)
+![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
-Aplikasi ini dibangun menggunakan arsitektur Hybrid: Frontend menggunakan **React (Vite)** dan Backend menggunakan **FastAPI (Python)** dengan model Machine Learning **Scikit-Learn**.
+<p align="center">
+  <b>SMS Guard & Miner</b> adalah aplikasi web Hybrid (React + Python) berbasis Machine Learning <br/>
+  untuk mendeteksi pesan <b>Normal</b>, <b>Penipuan (Fraud)</b>, atau <b>Promo</b> secara akurat.
+</p>
 
-![Project Status](https://img.shields.io/badge/Status-Active-green)
-![License](https://img.shields.io/badge/License-MIT-blue)
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
-![React](https://img.shields.io/badge/React-Vite-61DAFB)
+<a href="#-fitur-unggulan">Fitur</a> •
+<a href="#-tech-stack">Teknologi</a> •
+<a href="#-cara-instalasi-local">Instalasi</a> •
+<a href="#-deployment-guide-ngrok--vercel">Deployment</a> •
+<a href="#-tim-pengembang">Tim</a>
 
-## ✨ Fitur Utama
-
-* **🔍 Live Prediction:** Cek status SMS (Spam/Ham) secara real-time via API.
-* **📂 Batch Processing:** Upload file **CSV** atau **Excel** untuk melabeli ribuan SMS sekaligus secara otomatis.
-* **📊 Dashboard Visualisasi:** Grafik statistik distribusi data (Normal vs Fraud vs Promo).
-* **⬇️ Export Data:** Unduh hasil prediksi kembali ke format CSV.
-* **⚡ Hybrid Deployment:** Frontend terdeploy di Vercel, Backend berjalan lokal via Ngrok Tunneling untuk performa ML yang optimal.
-
-## 🛠️ Tech Stack
-
-### Frontend
-* **Framework:** React.js (Vite)
-* **Styling:** Tailwind CSS
-* **Charts:** Recharts
-* **Icons:** Lucide React
-* **HTTP Client:** Axios
-
-### Backend & AI
-* **Framework:** FastAPI
-* **Server:** Uvicorn
-* **Machine Learning:** Scikit-Learn, Pandas, Numpy
-* **Tunneling:** Ngrok (untuk mengekspos localhost ke internet)
+</div>
 
 ---
 
-## 🚀 Cara Menjalankan (Local Development)
+## ✨ Fitur Unggulan
 
-Ikuti langkah ini untuk menjalankan proyek di komputer lokal.
+| Fitur | Deskripsi |
+| :--- | :--- |
+| **🔍 Live Prediction** | Analisis status SMS (Spam/Ham) secara *real-time* via API tunggal. |
+| **📂 Batch Processing** | Upload file **CSV/Excel** untuk melabeli ribuan data sekaligus secara otomatis. |
+| **📊 Smart Dashboard** | Visualisasi data interaktif dengan grafik distribusi (Normal vs Fraud vs Promo). |
+| **⬇️ Export Data** | Unduh hasil analisis dan prediksi kembali ke format CSV/Excel. |
+| **⚡ Hybrid Architecture** | Kombinasi performa Backend Lokal (GPU/CPU) dengan fleksibilitas Frontend Cloud. |
 
-### 1. Clone Repository
+---
+
+## 🛠️ Tech Stack
+
+Aplikasi ini dibangun menggunakan teknologi modern untuk menjamin performa dan skalabilitas.
+
+### **Frontend (Client)**
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Recharts](https://img.shields.io/badge/Recharts-22b5bf?style=for-the-badge&logo=hugo&logoColor=white)
+
+### **Backend & AI (Server)**
+![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![Python](https://img.shields.io/badge/Python-3.7+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Scikit-Learn](https://img.shields.io/badge/scikit_learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
+
+### **Infrastructure & Tools**
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![Ngrok](https://img.shields.io/badge/Ngrok-1F1E38?style=for-the-badge&logo=ngrok&logoColor=white)
+![Git](https://img.shields.io/badge/GIT-E44C30?style=for-the-badge&logo=git&logoColor=white)
+
+---
+
+## 🚀 Cara Instalasi (Local)
+
+Ikuti langkah ini untuk menjalankan proyek sepenuhnya di komputer lokal.
+
+### 1️⃣ Clone Repository
 ```bash
 git clone [https://github.com/aljuan14/sms-spam-detector.git](https://github.com/aljuan14/sms-spam-detector.git)
 cd sms-spam-detector
 
 ```
 
-### 2. Setup Backend (Python)
-
-Pastikan Python sudah terinstall di komputermu.
+### 2️⃣ Setup Backend (Python)
 
 ```bash
-# 1. Masuk ke folder backend
 cd backend
 
-# 2. (Opsional) Buat dan aktifkan virtual environment
+# Buat & Aktifkan Virtual Environment (Opsional tapi direkomendasikan)
 python -m venv venv
-# Windows:
-venv\Scripts\activate
-# Linux/Mac:
-source venv/bin/activate
+# Windows: venv\Scripts\activate
+# Mac/Linux: source venv/bin/activate
 
-# 3. Install dependencies
+# Install Library
 pip install -r requirements.txt
 
-# 4. Jalankan Server
-# Pastikan dijalankan di dalam folder 'backend'
+# Jalankan Server
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ```
 
-*Backend akan berjalan di `http://localhost:8000*`
+> ✅ Backend berjalan di: `http://localhost:8000`
 
-### 3. Setup Frontend (React)
+### 3️⃣ Setup Frontend (React)
 
-Buka terminal baru (jangan matikan terminal backend).
+Buka terminal baru:
 
 ```bash
-# 1. Masuk ke folder frontend
 cd frontend
 
-# 2. Install dependencies
+# Install Library JS
 npm install
 
-# 3. Jalankan Frontend
+# Jalankan Web App
 npm run dev
 
 ```
 
-*Frontend akan berjalan di `http://localhost:5173*`
+> ✅ Frontend berjalan di: `http://localhost:5173`
 
 ---
 
-## 🌐 Cara Deployment (Metode Ngrok + Vercel)
+## 🌐 Deployment Guide (Ngrok + Vercel)
 
-Karena model Machine Learning dan library pendukung (Pandas/Scikit-learn) membutuhkan resource yang cukup besar, backend dijalankan di **Local Server** (Laptop) dan dihubungkan ke frontend Vercel menggunakan **Ngrok**.
+Karena model Machine Learning membutuhkan resource komputasi yang besar, kami menggunakan pendekatan **Hybrid**: Backend berjalan di Laptop lokal, Frontend berjalan di Vercel, dihubungkan oleh **Ngrok**.
 
-### Langkah 1: Nyalakan Backend & Ngrok
+### 🔹 Langkah 1: Nyalakan Backend & Tunnel
 
-Di laptop/server lokal, buka dua terminal:
+Di laptop/server lokal, buka dua terminal terpisah:
 
-**Terminal 1 (Backend):**
+**Terminal A (Python Server):**
 
 ```bash
 cd backend
@@ -108,55 +123,59 @@ uvicorn main:app --reload --port 8000
 
 ```
 
-**Terminal 2 (Ngrok):**
+**Terminal B (Ngrok Tunnel):**
 
 ```bash
 ngrok http 8000
 
 ```
 
-👉 *Copy URL HTTPS yang muncul (contoh: `https://xxxx.ngrok-free.app`).*
+👉 *Salin URL HTTPS yang muncul (contoh: `https://abcd-1234.ngrok-free.app`)*
 
-### Langkah 2: Update Frontend
+### 🔹 Langkah 2: Update Frontend Config
 
-Agar Vercel bisa menghubungi laptopmu, update URL API di kode frontend.
+Agar Vercel bisa berkomunikasi dengan laptop Anda:
 
 1. Buka file `frontend/src/App.jsx`.
-2. Cari dan ganti URL `axios.post` dengan link Ngrok barumu:
-
+2. Cari `axios.post` dan ganti URL-nya dengan link Ngrok terbaru:
 ```javascript
-// Contoh perubahan:
-const response = await axios.post('[https://xxxx.ngrok-free.app/predict](https://xxxx.ngrok-free.app/predict)', ...);
+const response = await axios.post('[https://abcd-1234.ngrok-free.app/predict](https://abcd-1234.ngrok-free.app/predict)', ...);
 
 ```
 
-3. Simpan perubahan, lalu push ke GitHub:
 
+3. Simpan dan Push ke GitHub:
 ```bash
 git add .
-git commit -m "Update API URL"
+git commit -m "Update Production URL"
 git push origin main
 
 ```
 
-### Langkah 3: Deploy Frontend
 
-Frontend akan otomatis ter-deploy di **Vercel** setiap kali ada push ke branch `main`.
 
-* Pastikan **Root Directory** di settingan Project Vercel diarahkan ke folder `frontend`.
+### 🔹 Langkah 3: Auto-Deploy
+
+Vercel akan otomatis mendeteksi perubahan dan melakukan deployment ulang. Dalam 1-2 menit, aplikasi siap digunakan!
 
 ---
 
 ## 👨‍💻 Tim Pengembang
 
-**Kelompok 3 - Informatika UTY**
+Proyek ini dikembangkan oleh **Kelompok 3 - Informatika UTY** untuk tugas besar mata kuliah *Text Mining / Data Mining*.
 
-* **Alfito Juanda** (Fullstack Developer & AI Engineer)
-* **Akbar Ramadhan**
-* **Zahfar Aziz Ferdian**
+| Nama | Role |
+| --- | --- |
+| **Alfito Juanda** | Fullstack Developer & AI Engineer |
+| **Akbar Ramadhan** | Data Analyst & Documentation |
+| **Zahfar Aziz Ferdian** | UI/UX Designer & Tester |
 
 ---
 
-**Catatan:** Proyek ini dibuat untuk memenuhi Tugas Besar mata kuliah Text Mining / Data Mining.
+<div align="center">
+<small>Made with ❤️ by Kelompok 3 UTY using Python & React</small>
+</div>
+
+```
 
 ```
