@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware  # <--- WAJIB IMPORT INI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import List  # <--- TAMBAHAN PENTING
 import joblib
 import re
 import spacy
@@ -68,12 +69,12 @@ def get_numeric_feature(data):
 # --- 2. LOAD MODEL & APP ---
 app = FastAPI(title="SMS Spam Detector API")
 
-# --- KONFIGURASI CORS (PENTING UNTUK MENGHUBUNGKAN FRONTEND) ---
+# --- KONFIGURASI CORS ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Mengizinkan semua domain (termasuk localhost:5173)
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Mengizinkan semua method (GET, POST, OPTIONS, dll)
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -84,9 +85,19 @@ except Exception as e:
     print(f"❌ Error memuat model: {e}")
 
 
+# --- 3. SCHEMAS (Input Model) ---
+
 class SMSInput(BaseModel):
     text: str
 
+# [BARU] Schema untuk Batch/File Input (List of strings)
+
+
+class BatchInput(BaseModel):
+    texts: List[str]
+
+
+# --- 4. ENDPOINTS ---
 
 @app.get("/")
 def home():
@@ -123,6 +134,39 @@ def predict_sms(input_data: SMSInput):
         }
     except Exception as e:
         print(f"Error saat prediksi: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# [BARU] Endpoint untuk menerima banyak data (dari File Upload)
+@app.post("/predict-batch")
+def predict_batch(input_data: BatchInput):
+    texts = input_data.texts
+    results = []
+
+    # Preprocessing semua teks dalam list
+    cleaned_texts = [bersih_bersih(t) for t in texts]
+
+    try:
+        # Buat DataFrame sekaligus (Batch processing)
+        input_df = pd.DataFrame({'Teks Bersih': cleaned_texts})
+
+        # Prediksi sekaligus (Lebih cepat daripada loop satu per satu)
+        predictions = model.predict(input_df)
+
+        label_map = {0: "Normal", 1: "Penipuan/Fraud", 2: "Promo"}
+
+        # Format output agar sesuai dengan tabel Frontend
+        for i, raw_text in enumerate(texts):
+            pred_label = label_map.get(int(predictions[i]), "Unknown")
+            results.append({
+                "Teks Asli": raw_text,
+                "Prediksi": pred_label
+            })
+
+        return results
+
+    except Exception as e:
+        print(f"Batch Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
