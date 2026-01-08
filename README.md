@@ -1,4 +1,3 @@
-```markdown
 <div align="center">
 
 # 🛡️ SMS Guard & Miner
@@ -66,7 +65,7 @@ Ikuti langkah ini untuk menjalankan proyek sepenuhnya di komputer lokal.
 git clone [https://github.com/aljuan14/sms-spam-detector.git](https://github.com/aljuan14/sms-spam-detector.git)
 cd sms-spam-detector
 
-```
+
 
 ### 2️⃣ Setup Backend (Python)
 
