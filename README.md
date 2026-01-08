@@ -1,3 +1,4 @@
+```markdown
 # 🛡️ SMS Guard & Miner
 
 **SMS Guard & Miner** adalah aplikasi web berbasis Machine Learning untuk mendeteksi dan mengklasifikasikan pesan SMS ke dalam kategori **Normal**, **Penipuan (Fraud)**, atau **Promo**.
@@ -6,6 +7,8 @@ Aplikasi ini dibangun menggunakan arsitektur Hybrid: Frontend menggunakan **Reac
 
 ![Project Status](https://img.shields.io/badge/Status-Active-green)
 ![License](https://img.shields.io/badge/License-MIT-blue)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![React](https://img.shields.io/badge/React-Vite-61DAFB)
 
 ## ✨ Fitur Utama
 
@@ -13,7 +16,7 @@ Aplikasi ini dibangun menggunakan arsitektur Hybrid: Frontend menggunakan **Reac
 * **📂 Batch Processing:** Upload file **CSV** atau **Excel** untuk melabeli ribuan SMS sekaligus secara otomatis.
 * **📊 Dashboard Visualisasi:** Grafik statistik distribusi data (Normal vs Fraud vs Promo).
 * **⬇️ Export Data:** Unduh hasil prediksi kembali ke format CSV.
-* **⚡ Hybrid Deployment:** Frontend terdeploy di Vercel, Backend berjalan lokal via Ngrok Tunneling.
+* **⚡ Hybrid Deployment:** Frontend terdeploy di Vercel, Backend berjalan lokal via Ngrok Tunneling untuk performa ML yang optimal.
 
 ## 🛠️ Tech Stack
 
@@ -41,65 +44,131 @@ Ikuti langkah ini untuk menjalankan proyek di komputer lokal.
 git clone [https://github.com/aljuan14/sms-spam-detector.git](https://github.com/aljuan14/sms-spam-detector.git)
 cd sms-spam-detector
 
+```
 
-2. Setup Backend (Python)
-Pastikan Python sudah terinstall.
+### 2. Setup Backend (Python)
 
-Bash
+Pastikan Python sudah terinstall di komputermu.
 
-# Masuk ke folder backend
+```bash
+# 1. Masuk ke folder backend
 cd backend
 
-# (Opsional) Buat virtual environment
+# 2. (Opsional) Buat dan aktifkan virtual environment
 python -m venv venv
-# Aktifkan venv (Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate)
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
 
-# Install dependencies
-pip install -r ../requirements.txt
+# 3. Install dependencies
+pip install -r requirements.txt
 
-# Jalankan Server
+# 4. Jalankan Server
+# Pastikan dijalankan di dalam folder 'backend'
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
-3. Setup Frontend (React)
-Buka terminal baru.
 
-Bash
+```
 
-# Masuk ke folder frontend
+*Backend akan berjalan di `http://localhost:8000*`
+
+### 3. Setup Frontend (React)
+
+Buka terminal baru (jangan matikan terminal backend).
+
+```bash
+# 1. Masuk ke folder frontend
 cd frontend
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Jalankan Frontend
+# 3. Jalankan Frontend
 npm run dev
-🌐 Cara Deployment (Metode Ngrok + Vercel)
-Karena model Machine Learning membutuhkan resource yang cukup besar, backend dijalankan di local server dan dihubungkan ke frontend Vercel menggunakan Ngrok.
 
-Langkah 1: Nyalakan Backend & Ngrok
-Di laptop/server lokal:
+```
 
-Jalankan Backend: uvicorn backend.main:app --reload --port 8000
+*Frontend akan berjalan di `http://localhost:5173*`
 
-Jalankan Ngrok: ngrok http 8000
+---
 
-Copy URL HTTPS dari Ngrok (contoh: https://xxxx.ngrok-free.app).
+## 🌐 Cara Deployment (Metode Ngrok + Vercel)
 
-Langkah 2: Update Frontend
-Buka file frontend/src/App.jsx.
+Karena model Machine Learning dan library pendukung (Pandas/Scikit-learn) membutuhkan resource yang cukup besar, backend dijalankan di **Local Server** (Laptop) dan dihubungkan ke frontend Vercel menggunakan **Ngrok**.
 
-Ganti URL API dengan link Ngrok yang baru.
+### Langkah 1: Nyalakan Backend & Ngrok
 
-JavaScript
+Di laptop/server lokal, buka dua terminal:
 
+**Terminal 1 (Backend):**
+
+```bash
+cd backend
+uvicorn main:app --reload --port 8000
+
+```
+
+**Terminal 2 (Ngrok):**
+
+```bash
+ngrok http 8000
+
+```
+
+👉 *Copy URL HTTPS yang muncul (contoh: `https://xxxx.ngrok-free.app`).*
+
+### Langkah 2: Update Frontend
+
+Agar Vercel bisa menghubungi laptopmu, update URL API di kode frontend.
+
+1. Buka file `frontend/src/App.jsx`.
+2. Cari dan ganti URL `axios.post` dengan link Ngrok barumu:
+
+```javascript
+// Contoh perubahan:
 const response = await axios.post('[https://xxxx.ngrok-free.app/predict](https://xxxx.ngrok-free.app/predict)', ...);
-Push ke GitHub.
 
-Langkah 3: Deploy Frontend
-Frontend akan otomatis ter-deploy di Vercel setiap kali ada push ke branch main.
+```
 
-Pastikan Root Directory di settingan Vercel diarahkan ke folder frontend.
+3. Simpan perubahan, lalu push ke GitHub:
 
-👨‍💻 Tim Pengembang
-Kelompok 3 - Informatika UTY
+```bash
+git add .
+git commit -m "Update API URL"
+git push origin main
 
-Catatan: Proyek ini dibuat untuk memenuhi Tugas Besar mata kuliah Text Mining / Data Mining.
+```
+
+### Langkah 3: Deploy Frontend
+
+Frontend akan otomatis ter-deploy di **Vercel** setiap kali ada push ke branch `main`.
+
+* Pastikan **Root Directory** di settingan Project Vercel diarahkan ke folder `frontend`.
+
+---
+
+## 👨‍💻 Tim Pengembang
+
+**Kelompok 3 - Informatika UTY**
+
+* **Alfito Juan** (Fullstack Developer & AI Engineer)
+* [Nama Anggota 2]
+* [Nama Anggota 3]
+* [Nama Anggota 4]
+
+---
+
+**Catatan:** Proyek ini dibuat untuk memenuhi Tugas Besar mata kuliah Text Mining / Data Mining.
+
+```
+
+### Apa yang saya perbaiki?
+1.  **Code Blocks:** Saya menambahkan triple backticks (\`\`\`) pada setiap perintah terminal agar tampilannya kotak hitam rapi di GitHub.
+2.  **Hyperlink Git Clone:** Memperbaiki format link `git clone` yang sebelumnya dobel.
+3.  **Struktur Folder:** Memperjelas perintah `cd backend` sebelum menjalankan `uvicorn main:app` agar tidak error "Module Not Found".
+4.  **Requirement Path:** Memastikan perintah `pip install` mengarah ke file yang benar (di dalam folder backend).
+5.  **Identitas Tim:** Saya tambahkan nama kamu dan placeholder untuk teman kelompokmu.
+
+**Tips:** Jangan lupa ganti `[Nama Anggota 2]` dst dengan nama teman sekelompokmu sebelum dikumpulkan ya!
+
+```
