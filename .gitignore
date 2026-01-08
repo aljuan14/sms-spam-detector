@@ -1,0 +1,25 @@
+# --- PYTHON / BACKEND ---
+backend/venv/
+backend/__pycache__/
+*.py[cod]
+*$py.class
+backend/.env
+
+# Model (Opsional: Kalau file > 100MB jangan dicommit. 
+# Tapi punya kamu kecil, jadi aman dicommit biar orang lain bisa coba)
+# *.pkl 
+
+# --- NODE / FRONTEND ---
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# --- IDE / SYSTEM ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
