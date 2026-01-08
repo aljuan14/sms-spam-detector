@@ -4,7 +4,7 @@ import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import {
   Send, AlertTriangle, CheckCircle, Megaphone, Loader2, MessageSquare,
-  Upload, FileText, Activity, BarChart2, Brain, Trash2, RefreshCw
+  Upload, FileText, Activity, BarChart2, Brain, Trash2, RefreshCw, Download, Filter
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 
@@ -24,16 +24,15 @@ function App() {
   const [dataStats, setDataStats] = useState({ rows: 0, cols: 0 });
   const [isTraining, setIsTraining] = useState(false);
 
+  // [BARU] State untuk Filter
+  const [filterType, setFilterType] = useState('All'); // 'All', 'Normal', 'Fraud', 'Promo'
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-  // --- LOGIKA CHART (OTOMATIS BACA KOLOM 'PREDIKSI') ---
+  // --- LOGIKA CHART ---
   const chartData = useMemo(() => {
     if (!tableData || tableData.length === 0) return [];
-
-    // Cari kolom hasil prediksi atau label manual
-    const labelKey = tableHeaders.find(h =>
-      ['prediksi', 'label', 'kategori', 'class', 'target'].includes(h.toLowerCase())
-    );
+    const labelKey = tableHeaders.find(h => ['prediksi', 'label', 'kategori'].includes(h.toLowerCase()));
 
     if (labelKey) {
       const counts = {};
@@ -43,12 +42,23 @@ function App() {
       });
       return Object.keys(counts).map(key => ({ name: key, value: counts[key] }));
     }
-
     return [{ name: 'Menunggu Prediksi...', value: 1 }];
   }, [tableData, tableHeaders]);
 
+  // [BARU] LOGIKA FILTER TABEL
+  const filteredTableData = useMemo(() => {
+    if (filterType === 'All') return tableData;
 
-  // --- LOGIKA 1: PREDIKSI SATUAN (KIRI) ---
+    // Asumsi nama kolom hasil prediksi adalah "Prediksi"
+    return tableData.filter(row => {
+      if (filterType === 'Fraud') return row['Prediksi'] === 'Penipuan/Fraud';
+      if (filterType === 'Normal') return row['Prediksi'] === 'Normal';
+      if (filterType === 'Promo') return row['Prediksi'] === 'Promo';
+      return true;
+    });
+  }, [tableData, filterType]);
+
+  // --- LOGIKA 1: PREDIKSI SATUAN ---
   const handlePredict = async (e) => {
     e.preventDefault();
     if (!inputText.trim()) return;
@@ -70,18 +80,13 @@ function App() {
     }
   };
 
-  // --- LOGIKA 2: UPLOAD & BATCH PREDIKSI (KANAN) ---
-
+  // --- LOGIKA 2: UPLOAD & BATCH ---
   const processBatchPrediction = async (data, originalHeaders) => {
     try {
-      // Ambil kolom pertama sebagai teks input
       const firstHeader = originalHeaders[0];
       const textsToSend = data.map(row => row[firstHeader]);
 
-      // Kirim ke Backend Batch Endpoint
-      const response = await axios.post('http://127.0.0.1:8000/predict-batch', {
-        texts: textsToSend
-      });
+      const response = await axios.post('http://127.0.0.1:8000/predict-batch', { texts: textsToSend });
 
       const predictedData = response.data;
       const newHeaders = Object.keys(predictedData[0]);
@@ -89,16 +94,12 @@ function App() {
       setTableData(predictedData);
       setTableHeaders(newHeaders);
       setDataStats({ rows: predictedData.length, cols: newHeaders.length });
-
     } catch (err) {
       console.error("Batch Predict Error:", err);
       alert("Gagal memproses prediksi batch. Pastikan backend jalan.");
-      setTableData(data);
-      setTableHeaders(originalHeaders);
-      setDataStats({ rows: data.length, cols: originalHeaders.length });
+      setTableData(data); setTableHeaders(originalHeaders); setDataStats({ rows: data.length, cols: originalHeaders.length });
     } finally {
-      setIsProcessing(false);
-      setShowDashboard(true);
+      setIsProcessing(false); setShowDashboard(true);
     }
   };
 
@@ -106,10 +107,8 @@ function App() {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
 
-    setTableData([]); setTableHeaders([]); setDataStats({ rows: 0, cols: 0 });
-    setFile(selectedFile);
-    setIsProcessing(true);
-    setShowDashboard(false);
+    setTableData([]); setTableHeaders([]); setDataStats({ rows: 0, cols: 0 }); setFilterType('All');
+    setFile(selectedFile); setIsProcessing(true); setShowDashboard(false);
 
     const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
     const fileInputElem = e.target;
@@ -144,16 +143,26 @@ function App() {
     } else { alert("Format file tidak didukung!"); setIsProcessing(false); fileInputElem.value = ""; }
   };
 
-  const handleResetDashboard = () => { setShowDashboard(false); setTableData([]); setFile(null); };
-
-  const handleTrainModel = () => {
-    setIsTraining(true);
-    setTimeout(() => { setIsTraining(false); alert("Fitur training belum terhubung ke backend."); }, 2000);
+  // [BARU] Fungsi Download CSV
+  const handleDownloadCSV = () => {
+    if (tableData.length === 0) return;
+    const csv = Papa.unparse(tableData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `hasil_prediksi_${file?.name || 'data'}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
+
+  const handleResetDashboard = () => { setShowDashboard(false); setTableData([]); setFile(null); setFilterType('All'); };
+  const handleTrainModel = () => { setIsTraining(true); setTimeout(() => { setIsTraining(false); alert("Fitur training belum terhubung."); }, 2000); };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans pb-20">
-      {/* NAVBAR */}
       <nav className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2">
           <div className="bg-indigo-600 p-2 rounded-lg text-white"><MessageSquare className="w-6 h-6" /></div>
@@ -169,7 +178,7 @@ function App() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mb-16">
-          {/* KOLOM KIRI: MANUAL INPUT */}
+          {/* KIRI */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 h-full flex flex-col">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-pink-100 text-pink-600 rounded-lg"><FileText className="w-6 h-6" /></div>
@@ -187,14 +196,12 @@ function App() {
                 <div className="flex justify-center">{getResultStyle(smsResult.label).icon}</div>
                 <h3 className="text-lg font-bold mb-1">{getResultStyle(smsResult.label).title}</h3>
                 <p className="text-sm opacity-90">Kategori: <strong>{smsResult.label}</strong></p>
-                <div className="mt-4 pt-3 border-t border-black/10 text-xs text-left">
-                  <p className="truncate"><strong>Asli:</strong> {smsResult.text}</p>
-                </div>
+                <div className="mt-4 pt-3 border-t border-black/10 text-xs text-left"><p className="truncate"><strong>Asli:</strong> {smsResult.text}</p></div>
               </div>
             )}
           </div>
 
-          {/* KOLOM KANAN: UPLOAD FILE */}
+          {/* KANAN */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 h-full flex flex-col">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-blue-100 text-blue-600 rounded-lg"><Brain className="w-6 h-6" /></div>
@@ -242,9 +249,7 @@ function App() {
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={chartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5} dataKey="value" label>
-                        {chartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                      </Pie>
+                      <Pie data={chartData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5} dataKey="value" label>{chartData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}</Pie>
                       <RechartsTooltip />
                       <Legend />
                     </PieChart>
@@ -252,14 +257,26 @@ function App() {
                 </div>
               </div>
 
+              {/* ACTIONS PANEL (SUDAH DIPERBAIKI) */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between">
                 <div>
-                  <h4 className="font-bold text-gray-800 mb-4">Actions</h4>
+                  <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Filter className="w-4 h-4" /> Filter Data Tabel</h4>
                   <div className="space-y-3">
-                    <button className="w-full border border-gray-300 py-2 rounded-lg text-sm hover:bg-gray-50 text-gray-600 transition">Filter: Positif Saja</button>
-                    <button className="w-full border border-gray-300 py-2 rounded-lg text-sm hover:bg-gray-50 text-gray-600 transition">Filter: Negatif Saja</button>
+                    <div className="flex gap-2">
+                      <button onClick={() => setFilterType('All')} className={`flex-1 py-2 text-xs rounded-lg border ${filterType === 'All' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>Semua</button>
+                      <button onClick={() => setFilterType('Normal')} className={`flex-1 py-2 text-xs rounded-lg border ${filterType === 'Normal' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 hover:bg-green-50'}`}>Normal</button>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => setFilterType('Fraud')} className={`flex-1 py-2 text-xs rounded-lg border ${filterType === 'Fraud' ? 'bg-red-600 text-white' : 'bg-white text-gray-600 hover:bg-red-50'}`}>Penipuan</button>
+                      <button onClick={() => setFilterType('Promo')} className={`flex-1 py-2 text-xs rounded-lg border ${filterType === 'Promo' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-600 hover:bg-yellow-50'}`}>Promo</button>
+                    </div>
                   </div>
+
+                  <button onClick={handleDownloadCSV} className="w-full mt-4 bg-indigo-600 py-2.5 rounded-lg text-sm text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition flex items-center justify-center gap-2">
+                    <Download className="w-4 h-4" /> Download CSV
+                  </button>
                 </div>
+
                 <div className="mt-6 pt-6 border-t border-gray-100">
                   <h4 className="font-bold text-gray-800 mb-2 text-sm">Model Management</h4>
                   <button onClick={handleTrainModel} disabled={isTraining} className="w-full bg-black text-white py-3 rounded-lg text-sm font-semibold hover:bg-gray-800 shadow-lg flex items-center justify-center gap-2 transition">
@@ -270,10 +287,11 @@ function App() {
               </div>
             </div>
 
-            {/* TABLE PREVIEW (SCROLLABLE & STICKY HEADER) */}
+            {/* TABLE PREVIEW (TERHUBUNG KE FILTER) */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden flex flex-col max-h-[600px]">
-              <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex-none">
-                <h4 className="font-bold text-gray-800 text-sm uppercase">Data Preview ({tableData.length} Baris)</h4>
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-100 flex-none flex justify-between items-center">
+                <h4 className="font-bold text-gray-800 text-sm uppercase">Data Preview ({filteredTableData.length} Baris)</h4>
+                {filterType !== 'All' && <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-600">Filter: {filterType}</span>}
               </div>
               <div className="overflow-auto flex-1">
                 <table className="w-full text-sm text-left text-gray-500">
@@ -281,7 +299,7 @@ function App() {
                     <tr>{tableHeaders.map((h, i) => <th key={i} className="px-6 py-3 whitespace-nowrap bg-gray-50">{h}</th>)}</tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {tableData.map((row, i) => (
+                    {filteredTableData.map((row, i) => (
                       <tr key={i} className="bg-white hover:bg-gray-50 transition-colors">
                         {tableHeaders.map((h, j) => (
                           <td key={j} className="px-6 py-3 whitespace-nowrap truncate max-w-xs">
