@@ -1,7 +1,9 @@
+import os
+import sys
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List  # <--- TAMBAHAN PENTING
+from typing import List
 import joblib
 import re
 import spacy
@@ -9,14 +11,25 @@ import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 
-# --- 1. SETUP & DEFINISI FUNGSI ---
+# --- 1. SETUP PATH & LOGGING (KHUSUS VERCEL) ---
+# Ini wajib agar file .pkl bisa ditemukan di server Vercel
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "sms_spam_detection_model.pkl")
+
+# --- 2. DEFINISI FUNGSI CUSTOM (WAJIB ADA UNTUK UNPICKLING) ---
+# Fungsi-fungsi ini harus didefinisikan SEBELUM load model
+# karena kemungkinan pipeline model kamu memanggil fungsi ini.
 
 try:
+    # Coba load spacy, jika gagal (karena environment serverless), pakai set kosong
+    # Di requirements.txt sebaiknya tambahkan link model spacy-nya
     nlp = spacy.blank("id")
     STOP_WORDS = nlp.Defaults.stop_words
-except Exception:
+except Exception as e:
+    print(f"Warning Spacy: {e}")
     STOP_WORDS = set()
 
+# List stop words tambahan kamu
 STOP_WORDS.update(['yg', 'jg', 'teh', 'mah', 'da', 'atuh', 'jd', 'km', 'ak', 'lg', 'ya', 'ga', 'ngga', 'nggak', 'gak', 'tp',
                    'kalo', 'nya', 'pake', 'liat', 'udh', 'aja', 'wkwk', 'wkwkwk', 'wk', 'gt', 'gais', 'blm', 'sih', 'tau',
                    'tahu', 'gt', 'udah', 'utk', 'rb', 'rp', 'dgn', 'ayo', 'isi', 'biar', 'yah', 'dr', 'bawa', 'gitu', 'eh',
@@ -66,46 +79,55 @@ def get_numeric_feature(data):
         return np.array([len(x) for x in data]).reshape(-1, 1)
 
 
-# --- 2. LOAD MODEL & APP ---
+# --- 3. LOAD MODEL & APP ---
 app = FastAPI(title="SMS Spam Detector API")
 
-# --- KONFIGURASI CORS ---
+# --- KONFIGURASI CORS (PENTING UNTUK VERCEL) ---
 app.add_middleware(
     CORSMiddleware,
+    # Di production bisa diganti domain spesifik frontend Vercel kamu
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Load Model dengan Path Absolut
 try:
-    model = joblib.load("sms_spam_detection_model.pkl")
+    print(f"Loading model from: {MODEL_PATH}")
+    model = joblib.load(MODEL_PATH)
     print("✅ Model berhasil dimuat!")
 except Exception as e:
     print(f"❌ Error memuat model: {e}")
+    # Kita tidak raise error disini agar app tetap jalan dan bisa return error message di endpoint root
+    model = None
 
+# --- 4. SCHEMAS (Input Model) ---
 
-# --- 3. SCHEMAS (Input Model) ---
 
 class SMSInput(BaseModel):
     text: str
-
-# [BARU] Schema untuk Batch/File Input (List of strings)
 
 
 class BatchInput(BaseModel):
     texts: List[str]
 
+# --- 5. ENDPOINTS ---
 
-# --- 4. ENDPOINTS ---
 
 @app.get("/")
 def home():
-    return {"message": "SMS Spam Detector API is Running!"}
+    if model is None:
+        return {"status": "error", "message": "Model file not found or failed to load.", "path_checked": MODEL_PATH}
+    return {"message": "SMS Spam Detector API is Running on Vercel!"}
 
 
 @app.post("/predict")
 def predict_sms(input_data: SMSInput):
+    if model is None:
+        raise HTTPException(
+            status_code=500, detail="Model belum dimuat di server.")
+
     raw_text = input_data.text
     cleaned_text = bersih_bersih(raw_text)
 
@@ -116,11 +138,8 @@ def predict_sms(input_data: SMSInput):
         try:
             proba = model.predict_proba(input_df)
             confidence = np.max(proba) * 100
-            print(
-                f"DEBUG: Input='{cleaned_text}' | Pred={prediction} | Proba={proba}")
         except:
             confidence = 0
-            print(f"DEBUG: Model tidak support predict_proba")
 
         label_map = {0: "Normal", 1: "Penipuan/Fraud", 2: "Promo"}
         result = label_map.get(int(prediction), "Unknown")
@@ -137,9 +156,12 @@ def predict_sms(input_data: SMSInput):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# [BARU] Endpoint untuk menerima banyak data (dari File Upload)
 @app.post("/predict-batch")
 def predict_batch(input_data: BatchInput):
+    if model is None:
+        raise HTTPException(
+            status_code=500, detail="Model belum dimuat di server.")
+
     texts = input_data.texts
     results = []
 
@@ -150,7 +172,7 @@ def predict_batch(input_data: BatchInput):
         # Buat DataFrame sekaligus (Batch processing)
         input_df = pd.DataFrame({'Teks Bersih': cleaned_texts})
 
-        # Prediksi sekaligus (Lebih cepat daripada loop satu per satu)
+        # Prediksi sekaligus
         predictions = model.predict(input_df)
 
         label_map = {0: "Normal", 1: "Penipuan/Fraud", 2: "Promo"}
@@ -172,4 +194,5 @@ def predict_batch(input_data: BatchInput):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # Host 0.0.0.0 penting untuk beberapa deployment container, tapi di Vercel ini di-handle entrypoint lain
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -64,7 +64,8 @@ function App() {
     if (!inputText.trim()) return;
     setLoadingSms(true); setSmsResult(null); setErrorSms('');
     try {
-      const response = await axios.post('http://127.0.0.1:8000/predict', { text: inputText });
+      // [PERUBAHAN PENTING] Menggunakan relative path /api untuk Vercel
+      const response = await axios.post('/api/predict', { text: inputText });
       setSmsResult(response.data);
     } catch (err) {
       console.error(err); setErrorSms('Gagal koneksi ke backend.');
@@ -86,7 +87,8 @@ function App() {
       const firstHeader = originalHeaders[0];
       const textsToSend = data.map(row => row[firstHeader]);
 
-      const response = await axios.post('http://127.0.0.1:8000/predict-batch', { texts: textsToSend });
+      // [PERUBAHAN PENTING] Menggunakan relative path /api untuk Vercel
+      const response = await axios.post('/api/predict-batch', { texts: textsToSend });
 
       const predictedData = response.data;
       const newHeaders = Object.keys(predictedData[0]);
