@@ -151,24 +151,12 @@ Frontend akan otomatis ter-deploy di **Vercel** setiap kali ada push ke branch `
 
 **Kelompok 3 - Informatika UTY**
 
-* **Alfito Juan** (Fullstack Developer & AI Engineer)
-* [Nama Anggota 2]
-* [Nama Anggota 3]
-* [Nama Anggota 4]
+* **Alfito Juanda** (Fullstack Developer & AI Engineer)
+* **Akbar Ramadhan**
+* **Zahfar Aziz Ferdian**
 
 ---
 
 **Catatan:** Proyek ini dibuat untuk memenuhi Tugas Besar mata kuliah Text Mining / Data Mining.
-
-```
-
-### Apa yang saya perbaiki?
-1.  **Code Blocks:** Saya menambahkan triple backticks (\`\`\`) pada setiap perintah terminal agar tampilannya kotak hitam rapi di GitHub.
-2.  **Hyperlink Git Clone:** Memperbaiki format link `git clone` yang sebelumnya dobel.
-3.  **Struktur Folder:** Memperjelas perintah `cd backend` sebelum menjalankan `uvicorn main:app` agar tidak error "Module Not Found".
-4.  **Requirement Path:** Memastikan perintah `pip install` mengarah ke file yang benar (di dalam folder backend).
-5.  **Identitas Tim:** Saya tambahkan nama kamu dan placeholder untuk teman kelompokmu.
-
-**Tips:** Jangan lupa ganti `[Nama Anggota 2]` dst dengan nama teman sekelompokmu sebelum dikumpulkan ya!
 
 ```
