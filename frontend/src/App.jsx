@@ -83,43 +83,86 @@ function App() {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
 
+    // 1. BERSIHKAN MEMORI DULU (Supaya tidak Crash/Memory Leak)
+    setTableData([]);
+    setTableHeaders([]);
+    setDataStats({ rows: 0, cols: 0 });
+
     setFile(selectedFile);
     setIsProcessing(true);
-    setShowDashboard(false); // Reset dashboard saat upload baru
+    setShowDashboard(false);
 
     const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
+    const fileInputElem = e.target; // Simpan referensi elemen input
+
+    // Fungsi callback saat parsing selesai
+    const onParseComplete = (data, headers) => {
+      setTableData(data);
+      setTableHeaders(headers);
+      setDataStats({ rows: data.length, cols: headers.length });
+      setIsProcessing(false);
+      setShowDashboard(true);
+
+      // 2. RESET INPUT VALUE (Penting agar bisa upload file yang sama lagi tanpa error)
+      fileInputElem.value = "";
+    };
 
     if (fileExtension === 'csv') {
       Papa.parse(selectedFile, {
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
-          updateDataState(results.data, Object.keys(results.data[0]));
+          if (results.data && results.data.length > 0) {
+            const headers = results.meta.fields || Object.keys(results.data[0]);
+            // Beri jeda sedikit agar UI rendering lancar
+            setTimeout(() => onParseComplete(results.data, headers), 500);
+          } else {
+            setIsProcessing(false);
+            alert("File CSV kosong atau format salah!");
+            fileInputElem.value = "";
+          }
         },
-        error: (error) => { console.error(error); setIsProcessing(false); }
+        error: (error) => {
+          console.error(error);
+          setIsProcessing(false);
+          fileInputElem.value = "";
+        }
       });
     } else if (['xlsx', 'xls'].includes(fileExtension)) {
       const reader = new FileReader();
       reader.onload = (evt) => {
-        const wb = XLSX.read(evt.target.result, { type: 'binary' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const parsedData = XLSX.utils.sheet_to_json(ws);
-        if (parsedData.length > 0) {
-          updateDataState(parsedData, Object.keys(parsedData[0]));
+        try {
+          const wb = XLSX.read(evt.target.result, { type: 'binary' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const parsedData = XLSX.utils.sheet_to_json(ws);
+
+          if (parsedData.length > 0) {
+            const headers = Object.keys(parsedData[0]);
+            setTimeout(() => onParseComplete(parsedData, headers), 500);
+          } else {
+            setIsProcessing(false);
+            alert("File Excel kosong!");
+            fileInputElem.value = "";
+          }
+        } catch (err) {
+          console.error(err);
+          setIsProcessing(false);
+          alert("Gagal membaca file Excel.");
+          fileInputElem.value = "";
         }
       };
       reader.readAsBinaryString(selectedFile);
+    } else {
+      alert("Format file tidak didukung!");
+      setIsProcessing(false);
+      fileInputElem.value = "";
     }
   };
 
-  const updateDataState = (data, headers) => {
-    setTimeout(() => {
-      setTableData(data);
-      setTableHeaders(headers);
-      setDataStats({ rows: data.length, cols: headers.length });
-      setIsProcessing(false);
-      setShowDashboard(true);
-    }, 1500);
+  const handleResetDashboard = () => {
+    setShowDashboard(false);
+    setTableData([]);
+    setFile(null);
   };
 
   return (
@@ -255,7 +298,7 @@ function App() {
               <h3 className="text-2xl font-bold text-gray-800">Hasil Analisis Dataset</h3>
               <button
                 className="flex items-center gap-2 text-sm text-red-500 hover:text-red-700 font-medium transition"
-                onClick={() => setShowDashboard(false)}
+                onClick={handleResetDashboard}
               >
                 <Trash2 className="w-4 h-4" /> Reset / Hapus Data
               </button>
