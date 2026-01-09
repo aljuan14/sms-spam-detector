@@ -8,6 +8,11 @@ import {
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 
+// ==================================================================
+// 👇 URL NGROK BARU ANDA (Sudah diperbarui) 👇
+// ==================================================================
+const NGROK_URL = 'https://80219e449067.ngrok-free.app';
+
 function App() {
   // --- STATE BAGIAN KIRI (API SINGLE) ---
   const [inputText, setInputText] = useState('');
@@ -24,7 +29,7 @@ function App() {
   const [dataStats, setDataStats] = useState({ rows: 0, cols: 0 });
   const [isTraining, setIsTraining] = useState(false);
 
-  // [BARU] State untuk Filter
+  // State untuk Filter
   const [filterType, setFilterType] = useState('All'); // 'All', 'Normal', 'Fraud', 'Promo'
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -45,7 +50,7 @@ function App() {
     return [{ name: 'Menunggu Prediksi...', value: 1 }];
   }, [tableData, tableHeaders]);
 
-  // [BARU] LOGIKA FILTER TABEL
+  // --- LOGIKA FILTER TABEL ---
   const filteredTableData = useMemo(() => {
     if (filterType === 'All') return tableData;
 
@@ -64,11 +69,11 @@ function App() {
     if (!inputText.trim()) return;
     setLoadingSms(true); setSmsResult(null); setErrorSms('');
     try {
-      // [PERUBAHAN 1] Menggunakan Link Ngrok
-      const response = await axios.post('https://dfa81c80d646.ngrok-free.app/predict', { text: inputText });
+      // [UPDATE] Menggunakan Variabel NGROK_URL
+      const response = await axios.post(`${NGROK_URL}/predict`, { text: inputText });
       setSmsResult(response.data);
     } catch (err) {
-      console.error(err); setErrorSms('Gagal koneksi ke backend (Ngrok).');
+      console.error(err); setErrorSms('Gagal koneksi ke backend (Ngrok). Cek URL!');
     } finally { setLoadingSms(false); }
   };
 
@@ -87,8 +92,8 @@ function App() {
       const firstHeader = originalHeaders[0];
       const textsToSend = data.map(row => row[firstHeader]);
 
-      // [PERUBAHAN 2] Menggunakan Link Ngrok
-      const response = await axios.post('https://dfa81c80d646.ngrok-free.app/predict-batch', { texts: textsToSend });
+      // [UPDATE] Menggunakan Variabel NGROK_URL
+      const response = await axios.post(`${NGROK_URL}/predict-batch`, { texts: textsToSend });
 
       const predictedData = response.data;
       const newHeaders = Object.keys(predictedData[0]);
